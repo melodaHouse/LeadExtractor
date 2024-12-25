@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Data Table</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        button {
+            padding: 5px 10px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Student Data Extractor</h1>
+    <textarea id="jsonInput" placeholder="Paste your JSON data here"></textarea>
+    <button onclick="convertData()">Convert</button>
+
+    <table id="studentTable">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Gender</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        function convertData() {
+            const inputData = document.getElementById('jsonInput').value;
+            const tableBody = document.querySelector("#studentTable tbody");
+            tableBody.innerHTML = ''; // Clear existing table rows
+
+            try {
+                const data = JSON.parse(inputData);
+
+                data.forEach(student => {
+                    const { studentName, gender, mobileCode, mobile, email } = student;
+                    const phone = `${mobileCode} ${mobile}`;
+
+                    // Create a new row
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${studentName}</td>
+                        <td>${gender}</td>
+                        <td>${phone}</td>
+                        <td>${email}</td>
+                        <td>
+                            <button onclick="copyDetails('${studentName}', '${gender}', '${phone}', '${email}')">
+                                Copy
+                            </button>
+                        </td>
+                    `;
+
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                alert("Invalid JSON data. Please check the input.");
+                console.error(error);
+            }
+        }
+
+        function copyDetails(name, gender, phone, email) {
+            const format = `Name: ${name}\nGender: ${gender}\nPhone: ${phone}\nEmail: ${email}`;
+            navigator.clipboard.writeText(format)
+                .then(() => alert("Details copied to clipboard!"))
+                .catch(err => console.error("Failed to copy text: ", err));
+        }
+    </script>
+</body>
+</html>
