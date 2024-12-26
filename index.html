@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Data Table</title>
+    <title>Student Data Extractor</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -31,6 +31,7 @@
             color: white;
             border: none;
             border-radius: 5px;
+            margin: 5px 0;
         }
         button:hover {
             background-color: #0056b3;
@@ -46,6 +47,7 @@
     <h1>Student Data Extractor</h1>
     <textarea id="jsonInput" placeholder="Paste your JSON data here"></textarea>
     <button onclick="convertData()">Convert</button>
+    <button onclick="copyAllDetails()">Copy All</button>
 
     <table id="studentTable">
         <thead>
@@ -61,10 +63,13 @@
     </table>
 
     <script>
+        let extractedData = []; // To store extracted data for "Copy All"
+
         function convertData() {
             const inputData = document.getElementById('jsonInput').value;
             const tableBody = document.querySelector("#studentTable tbody");
             tableBody.innerHTML = ''; // Clear existing table rows
+            extractedData = []; // Reset extracted data
 
             try {
                 const data = JSON.parse(inputData);
@@ -72,6 +77,9 @@
                 data.forEach(student => {
                     const { studentName, gender, mobileCode, mobile, email } = student;
                     const phone = `${mobileCode} ${mobile}`;
+
+                    // Add data to extractedData array
+                    extractedData.push({ studentName, gender, phone, email });
 
                     // Create a new row
                     const row = document.createElement('tr');
@@ -99,6 +107,21 @@
             const format = `Name: ${name}\nGender: ${gender}\nPhone: ${phone}\nEmail: ${email}`;
             navigator.clipboard.writeText(format)
                 .then(() => alert("Details copied to clipboard!"))
+                .catch(err => console.error("Failed to copy text: ", err));
+        }
+
+        function copyAllDetails() {
+            if (extractedData.length === 0) {
+                alert("No data to copy! Please convert the data first.");
+                return;
+            }
+
+            const allDetails = extractedData.map(student => {
+                return `Name: ${student.studentName}\nGender: ${student.gender}\nPhone: ${student.phone}\nEmail: ${student.email}`;
+            }).join("\n\n");
+
+            navigator.clipboard.writeText(allDetails)
+                .then(() => alert("All details copied to clipboard!"))
                 .catch(err => console.error("Failed to copy text: ", err));
         }
     </script>
